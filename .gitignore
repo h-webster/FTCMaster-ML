@@ -2,3 +2,7 @@
 __pycache__/
 *.pyc
 *.pyo
+opr.csv
+ml_matches.csv
+matches.csv
+allevents.json

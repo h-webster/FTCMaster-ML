@@ -46,7 +46,7 @@ for event in data:
 df = pd.DataFrame(rows)
 
 # Save the flattened match data to CSV
-df.to_csv("matches_flat.csv", index=False)
+df.to_csv("matches.csv", index=False)
 
 # Print first few rows to verify
 print(df.head())
