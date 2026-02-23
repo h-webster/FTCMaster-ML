@@ -39,21 +39,7 @@ def get_team_opr(team_number: int):
     """Fetch a single team's OPR data from MongoDB"""
     return opr_collection.find_one({"number": team_number})
 
-def sum_opr(teams: List[int], nested_field: str):
-    """
-    Sum OPR values for a list of teams.
-    nested_field uses dot notation e.g. 'tot.value', 'auto.value'
-    """
-    total = 0
-    parts = nested_field.split(".")
-    for team in teams:
-        doc = get_team_opr(team)
-        if doc:
-            val = doc
-            for p in parts:
-                val = val.get(p, 0)
-            total += val
-    return total
+
 
 @app.get("/")
 def root():
@@ -67,8 +53,29 @@ def get_team(team_number: int):
 
 @app.post("/predict")
 def predict(match: MatchInput):
+    global team_oprs
     features = ["tot_diff", "auto_diff", "teleop_diff", "endgame_diff"]
-
+    team_oprs = {}
+    def sum_opr(teams: List[int], nested_field: str):
+        """
+        Sum OPR values for a list of teams.
+        nested_field uses dot notation e.g. 'tot.value', 'auto.value'
+        """
+        total = 0
+        parts = nested_field.split(".")
+        for team in teams:
+            doc = get_team_opr(team)
+            if doc:
+                val = doc
+                for p in parts:
+                    val = val.get(p, 0)
+                if (nested_field == "tot.value"):
+                    team_oprs[team] = val
+                total += val
+        return total
+    teams = {}
+    teams["red"] = match.redTeams
+    teams["blue"] = match.blueTeams
     red_tot = sum_opr(match.redTeams, "tot.value")
     blue_tot = sum_opr(match.blueTeams, "tot.value")
     red_auto = sum_opr(match.redTeams, "auto.value")
@@ -97,7 +104,9 @@ def predict(match: MatchInput):
         "oprs": {
             "red": {"total": red_tot, "auto": red_auto, "teleop": red_teleop, "endgame": red_endgame},
             "blue": {"total": blue_tot, "auto": blue_auto, "teleop": blue_teleop, "endgame": blue_endgame}
-        }
+        },
+        "teamoprs": team_oprs,
+        "teams": teams
     }
 
 # Vercel handler
